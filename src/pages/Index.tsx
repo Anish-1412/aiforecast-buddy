@@ -1,39 +1,38 @@
 import { useState } from "react";
 import { WeatherSearch } from "@/components/WeatherSearch";
 import { WeatherDisplay } from "@/components/WeatherDisplay";
+import { fetchWeatherForecast, type WeatherData } from "@/services/weatherApi";
+import { useToast } from "@/hooks/use-toast";
 import heroImage from "@/assets/weather-hero.jpg";
-
-interface WeatherData {
-  location: string;
-  temperature: number;
-  rainChance: number;
-  humidity: number;
-  windSpeed: number;
-}
 
 const Index = () => {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Mock weather data generator
-  const generateMockWeather = (location: string): WeatherData => {
-    return {
-      location: location.includes(",") ? "Current Location" : location,
-      temperature: Math.floor(Math.random() * 30) + 10, // 10-40°C
-      rainChance: Math.floor(Math.random() * 100), // 0-100%
-      humidity: Math.floor(Math.random() * 40) + 40, // 40-80%
-      windSpeed: Math.floor(Math.random() * 20) + 5 // 5-25 km/h
-    };
-  };
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleSearch = async (location: string) => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      const mockWeather = generateMockWeather(location);
-      setWeather(mockWeather);
+    setError(null);
+    
+    try {
+      const forecastData = await fetchWeatherForecast(location);
+      setWeather(forecastData);
+      toast({
+        title: "Forecast Updated",
+        description: `Weather data loaded for ${forecastData.location}`,
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch weather data';
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleRefresh = () => {
@@ -72,8 +71,17 @@ const Index = () => {
             <WeatherSearch onSearch={handleSearch} isLoading={isLoading} />
           </section>
 
+          {/* Error Section */}
+          {error && (
+            <section className="max-w-md mx-auto">
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-center">
+                <p className="text-destructive text-sm">{error}</p>
+              </div>
+            </section>
+          )}
+
           {/* Results Section */}
-          {weather && (
+          {weather && !error && (
             <section className="max-w-6xl mx-auto">
               <WeatherDisplay 
                 weather={weather} 

@@ -27,13 +27,13 @@ export const WeatherSearch = ({ onSearch, isLoading = false }: WeatherSearchProp
         },
         (error) => {
           console.error("Geolocation error:", error);
-          // Fallback to a default location
-          onSearch("New York");
+          // Use coordinates for a default location (New York)
+          onSearch("40.7128,-74.0060");
         }
       );
     } else {
       console.error("Geolocation is not supported");
-      onSearch("New York");
+      onSearch("40.7128,-74.0060");
     }
   };
 
